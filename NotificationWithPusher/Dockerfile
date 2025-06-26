@@ -1,21 +1,12 @@
-# Stage 1: Build the application
+# Use .NET 8.0 SDK for build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /app
-
-# Copy csproj and restore
-COPY NotificationWithPusher.csproj ./
+WORKDIR /src
+COPY . .
 RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
 
-# Copy everything else and build
-COPY . ./
-RUN dotnet publish -c Release -o /out /p:UseAppHost=false
-
-# Stage 2: Run the application
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# Use .NET 8.0 runtime for final image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY --from=build /out .
-
-ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
-
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "NotificationWithPusher.dll"]
